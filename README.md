@@ -12,7 +12,7 @@ A ideia principal deste projeto é criar um repositório no Git com os estudos v
 ---
 
 ### 📚 Referências e Inspirações
-Todo o conteúdo é baseado no livro **"Programação Shell Linux"** do autor **Julio Cezar Neves**, a quem dedico esta página como inspiração de alguém que dedica a vida para transmitir conhecimento prático da mais alta qualidade e senso de humor.
+Todo o conteúdo é baseado no livro **"Programação Shell Linux"** do autor **Julio Cezar Neves**, a quem dedico esta página como inspiração de alguém que dedica a vida para transmitir conhecimento prático da mais alta qualidade e com um tremendo senso de humor.
 
 As referências para o estudo da certificação LPI são baseadas no material oficial que você pode acessar através do link:
 👉 [Portal de Aprendizado LPI](https://learning.lpi.org/pt/)
