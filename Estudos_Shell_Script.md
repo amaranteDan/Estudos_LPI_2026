@@ -449,15 +449,27 @@ scale=3; 22/7
 ## Extraindo um arquivo tar
 
 ```bash
+- f especifica o arquivo
+- z Descompoacta o arquivo
+- t Lista na tela o conteudo
+- x extrai o arquivo
+- {"-C"} especifica o caminho de onde extrair o arquivo /tmp/backup
 $ tar -zxf Programacao-Shell-Linux-Exercicios-Arquivos.tar.gz
 
 ou
 
 $ tar -zvxf Programacao-Shell-Linux-Exercicios-Arquivos.tar.gz
 
-# ou extraindo para uma pasta especifica
-$ tar -ztf Programacao-Shell-Linux-Exercicios-Arquivos.tar.gz
+# ou extraindo para uma pasta especifica -C
+$ tar -zxvf arquivo.tar.gz Programacao-Shell-Linux-Exercicios-Arquivos.tar.gz -C /tmp/backup
 
 # O -t (list) mostra o que tem dentro sem descompactar nada.
-
+$ tar -ztf Programacao-Shell-Linux-Exercicios-Arquivos.tar.gz
 ```
+# Exercicios de fixação: Criando o primeiro script para verificar o site
+
+
+
+# Comandos diferenciados 
+
+## sed -> Stream Editor

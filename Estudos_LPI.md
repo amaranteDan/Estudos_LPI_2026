@@ -450,3 +450,47 @@ pinctrl_cannonlake     36864  0
 # modprobe -r usado para carregar e descarragar modulos desde que não estejam sendo carregados em processo de execução
 
 $ modprobe -r snd-hda-intel
+```
+
+# Verificando a memoria swap
+```bash
+$ free -h 
+
+# Saber onde esta localizado a partição swap
+
+$ swapon --show
+
+ou ler o arquivo
+
+$ cat /proc/swaps
+
+# Verificando a performance
+
+# Ele exibe uma lista detalhada de eventos de memória, incluindo o total de "swap in" e "swap out" (quando o sistema move dados para o disco).
+$ vmstat -s 
+
+# Preparando a partição
+
+$ sudo mkswap /dev/sda3
+
+# Ativar o swap
+$ sudo swapon /dev/sda3
+
+# Checkar se esta tudo ok
+swapon --show
+
+# Tornar a mudança permanente no /etc/fstab
+
+$ sudo nano /etc/fstab
+
+# Checar a tendencia do sistema usar o swap:
+
+$ cat /proc/sys/vm/swappiness
+
+- valor 60(padrão), sistema usa com frequencia
+- caso sentir sistema lento, mudar para (10)
+
+# Verifica detalhes
+
+$ ls -lh /swapfile
+```
