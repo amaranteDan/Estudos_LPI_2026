@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programação Shell Linux</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1a1f2e, #2d3748); padding: 30px 40px; border-bottom: 2px solid #4f46e5; text-align: center; }
+  header h1 { font-size: 2rem; color: #a78bfa; letter-spacing: 1px; }
+  header p { color: #94a3b8; margin-top: 6px; font-size: 0.95rem; }
+  .container { display: flex; min-height: calc(100vh - 110px); }
+  .sidebar { width: 260px; min-width: 260px; background: #1a1f2e; padding: 20px 0; border-right: 1px solid #2d3748; }
+  .sidebar-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #64748b; padding: 0 20px 12px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s; font-size: 0.88rem; color: #94a3b8; }
+  .nav-item:hover { background: #2d3748; color: #e2e8f0; }
+  .nav-item.active { border-left-color: var(--mod-color); background: #2d3748; color: #fff; }
+  .nav-badge { margin-left: auto; font-size: 0.7rem; background: #2d3748; padding: 2px 7px; border-radius: 10px; color: #64748b; }
+  .nav-item.active .nav-badge { background: var(--mod-color); color: #fff; }
+  .main { flex: 1; padding: 30px 40px; overflow-y: auto; }
+  .module-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .module-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: var(--mod-color); flex-shrink: 0; }
+  .module-header h2 { font-size: 1.4rem; color: #f1f5f9; }
+  .module-header p { color: #94a3b8; font-size: 0.88rem; margin-top: 3px; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid #2d3748; }
+  .tab { padding: 8px 18px; cursor: pointer; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; margin-bottom: -1px; }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: var(--mod-color); border-bottom-color: var(--mod-color); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .topic-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .topic-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; transition: background 0.2s; }
+  .topic-header:hover { background: #2d3748; }
+  .topic-title { font-size: 0.95rem; font-weight: 500; color: #e2e8f0; display: flex; align-items: center; gap: 10px; }
+  .topic-title span { font-size: 1rem; }
+  .topic-arrow { color: #64748b; transition: transform 0.2s; font-size: 0.8rem; }
+  .topic-card.open .topic-arrow { transform: rotate(90deg); }
+  .topic-body { display: none; padding: 0 18px 18px; }
+  .topic-card.open .topic-body { display: block; }
+  .topic-body p { color: #94a3b8; font-size: 0.88rem; line-height: 1.7; margin-bottom: 12px; }
+  .code-block { background: #0d1117; border: 1px solid #2d3748; border-radius: 8px; margin: 10px 0; overflow: hidden; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: #161b22; border-bottom: 1px solid #2d3748; font-size: 0.75rem; color: #64748b; }
+  .code-header .dots { display: flex; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .copy-btn { background: #2d3748; border: none; color: #94a3b8; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
+  .copy-btn:hover { background: #4f46e5; color: #fff; }
+  pre { padding: 14px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.82rem; line-height: 1.6; color: #e2e8f0; }
+  .kw { color: #c792ea; } .str { color: #c3e88d; } .cm { color: #546e7a; font-style: italic; }
+  .fn { color: #82aaff; } .var { color: #f78c6c; } .op { color: #89ddff; }
+  .info-box { background: #1e293b; border-left: 3px solid var(--mod-color); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 12px 0; font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+  .info-box strong { color: #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 10px 0; }
+  th { background: #2d3748; color: #94a3b8; padding: 8px 12px; text-align: left; font-weight: 500; }
+  td { padding: 8px 12px; border-bottom: 1px solid #2d3748; color: #cbd5e1; }
+  tr:hover td { background: #1e293b; }
+  .module-page { display: none; }
+  .module-page.active { display: block; }
+  @media (max-width: 768px) { .sidebar { width: 200px; min-width: 200px; } .main { padding: 20px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐧 Programação Shell Linux</h1>
+  <p>Guia de Estudos Interativo · Baseado no curso de Julio Cezar Neves</p>
+</header>
+<div class="container">
+  <nav class="sidebar">
+    <div class="sidebar-title">Módulos</div>
+    <div class="nav-item active" style="--mod-color:#4f46e5" onclick="showModule(0)" id="nav-0"><span>🏗️</span> Fundamentos do Shell <span class="nav-badge">9</span></div>
+    <div class="nav-item" style="--mod-color:#0891b2" onclick="showModule(1)" id="nav-1"><span>✂️</span> sed e grep <span class="nav-badge">4</span></div>
+    <div class="nav-item" style="--mod-color:#059669" onclick="showModule(2)" id="nav-2"><span>🔢</span> Corte e Aritmética <span class="nav-badge">4</span></div>
+    <div class="nav-item" style="--mod-color:#d97706" onclick="showModule(3)" id="nav-3"><span>🔀</span> Estruturas de Controle <span class="nav-badge">4</span></div>
+    <div class="nav-item" style="--mod-color:#7c3aed" onclick="showModule(4)" id="nav-4"><span>📥</span> E/S e Variáveis Avançadas <span class="nav-badge">4</span></div>
+    <div class="nav-item" style="--mod-color:#dc2626" onclick="showModule(5)" id="nav-5"><span>🤖</span> Automação e Depuração <span class="nav-badge">5</span></div>
+  </nav>
+  <main class="main">
+
+    <!-- ═══════════════ MÓDULO 1 ═══════════════ -->
+    <div class="module-page active" id="mod-0" style="--mod-color:#4f46e5">
+      <div class="module-header">
+        <div class="module-icon">🏗️</div>
+        <div><h2>Módulo 1 — Fundamentos e Mecânica do Shell</h2><p>Como o Shell interpreta e processa a linha de comando antes de executar</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m0t0')">Visão Geral</div>
+        <div class="tab" onclick="switchTab(this,'m0t1')">Variáveis</div>
+        <div class="tab" onclick="switchTab(this,'m0t2')">Redirecionamentos</div>
+        <div class="tab" onclick="switchTab(this,'m0t3')">Expansões</div>
+        <div class="tab" onclick="switchTab(this,'m0t4')">Citações</div>
+        <div class="tab" onclick="switchTab(this,'m0t5')">Coringas</div>
+        <div class="tab" onclick="switchTab(this,'m0t6')">Brace Expansion</div>
+        <div class="tab" onclick="switchTab(this,'m0t7')">Comando time</div>
+        <div class="tab" onclick="switchTab(this,'m0t8')">bc, tee e tar</div>
+      </div>
+
+      <!-- Tab: Visão Geral -->
+      <div class="tab-content active" id="m0t0">
+        <div class="info-box"><strong>Ciclo de vida do comando:</strong> O Shell processa a linha em etapas antes de executar qualquer coisa. Entender essa ordem evita 80% dos bugs.</div>
+        <table>
+          <tr><th>#</th><th>Etapa</th><th>Exemplo</th></tr>
+          <tr><td>1</td><td>Leitura da linha</td><td><code>echo ${A} *.txt</code></td></tr>
+          <tr><td>2</td><td>Tokenização</td><td>divide em palavras</td></tr>
+          <tr><td>3</td><td>Expansão de chaves</td><td><code>{a,b}</code> → <code>a b</code></td></tr>
+          <tr><td>4</td><td>Expansão de til</td><td><code>~</code> → <code>/home/user</code></td></tr>
+          <tr><td>5</td><td>Substituição de variáveis</td><td><code>$VAR</code> → valor</td></tr>
+          <tr><td>6</td><td>Substituição de comandos</td><td><code>$(cmd)</code> → saída</td></tr>
+          <tr><td>7</td><td>Expansão aritmética</td><td><code>$((2+3))</code> → <code>5</code></td></tr>
+          <tr><td>8</td><td>Glob (nomes de arquivo)</td><td><code>*.txt</code> → arquivos</td></tr>
+          <tr><td>9</td><td>Execução</td><td>chama o programa</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># Exemplo da ordem de expansão</span>
+DIR=<span class="str">"*.txt"</span>
+<span class="fn">ls</span> <span class="var">$DIR</span>
+<span class="cm"># 1. $DIR é expandido → *.txt</span>
+<span class="cm"># 2. *.txt é expandido → lista de arquivos</span>
+<span class="cm"># 3. ls recebe os nomes dos arquivos</span>
+
+<span class="fn">echo</span> <span class="str">"Hoje é $(date +%A)"</span>
+<span class="cm"># $(date +%A) é executado ANTES do echo</span></pre>
+        </div>
+      </div>
+
+      <!-- Tab: Variáveis -->
+      <div class="tab-content" id="m0t1">
+        <div class="info-box"><strong>Regra de ouro:</strong> atribuição <strong>não tem espaços</strong> ao redor do <code>=</code>. Com espaço, o Shell interpreta como comando.</div>
+        <div class="topic-card">
+          <div class="topic-header" onclick="toggleTopic(this)"><div class="topic-title"><span>📌</span> Atribuição Básica</div><span class="topic-arrow">▶</span></div>
+          <div class="topic-body">
+            <div class="code-block">
+              <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+              <pre><span class="cm"># ✅ CORRETO</span>
+NOME=<span class="str">"Maria"</span>
+IDADE=<span class="str">30</span>
+DATA=<span class="op">$(</span><span class="fn">date</span> +%Y-%m-%d<span class="op">)</span>
+
+<span class="cm"># ❌ ERRADO — Shell trata NOME como comando!</span>
+NOME = <span class="str">"Maria"</span>
+
+<span class="cm"># Atribuição temporária (só vale para o comando)</span>
+LANG=C <span class="fn">sort</span> arquivo.txt</pre>
+            </div>
+          </div>
+        </div>
+        <div class="topic-card">
+          <div class="topic-header" onclick="toggleTopic(this)"><div class="topic-title"><span>🔒</span> Tipos com declare</div><span class="topic-arrow">▶</span></div>
+          <div class="topic-body">
+            <div class="code-block">
+              <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+              <pre><span class="kw">declare</span> -i CONTADOR=0   <span class="cm"># inteiro</span>
+CONTADOR+=1             <span class="cm"># funciona como aritmética</span>
+
+<span class="kw">declare</span> -r PI=3.14159   <span class="cm"># somente leitura</span>
+PI=3                    <span class="cm"># bash: PI: readonly variable</span>
+
+<span class="kw">declare</span> -x MINHA_VAR=<span class="str">"valor"</span>  <span class="cm"># exporta para subprocessos</span>
+<span class="cm"># equivalente a: export MINHA_VAR="valor"</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Redirecionamentos -->
+      <div class="tab-content" id="m0t2">
+        <table>
+          <tr><th>Descritor</th><th>Nome</th><th>Padrão</th></tr>
+          <tr><td><code>0</code></td><td>stdin</td><td>teclado</td></tr>
+          <tr><td><code>1</code></td><td>stdout</td><td>terminal</td></tr>
+          <tr><td><code>2</code></td><td>stderr</td><td>terminal</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># Saída</span>
+<span class="fn">ls</span> /tmp > saida.txt          <span class="cm"># stdout → arquivo (sobrescreve)</span>
+<span class="fn">ls</span> /tmp >> saida.txt         <span class="cm"># stdout → arquivo (append)</span>
+<span class="fn">ls</span> /x 2> erros.txt           <span class="cm"># stderr → arquivo</span>
+<span class="fn">ls</span> /tmp /x > tudo.txt 2>&1   <span class="cm"># stdout + stderr juntos</span>
+
+<span class="cm"># Entrada</span>
+<span class="fn">sort</span> < lista.txt
+<span class="fn">wc</span> -l < arquivo.txt
+
+<span class="cm"># Here Document</span>
+<span class="kw">cat</span> << EOF
+Linha 1
+Hoje é $(date)
+EOF
+
+<span class="cm"># Here String</span>
+<span class="fn">bc</span> <<< <span class="str">"scale=2; 10/3"</span>   <span class="cm"># → 3.33</span>
+
+<span class="cm"># Descartar saída</span>
+comando > /dev/null 2>&1</pre>
+        </div>
+        <div class="info-box">
+          <strong>⚠️ Ordem importa!</strong><br>
+          <code>ls > saida.txt 2>&1</code> ✅ stderr vai para o arquivo<br>
+          <code>ls 2>&1 > saida.txt</code> ❌ stderr vai para o terminal
+        </div>
+      </div>
+
+      <!-- Tab: Expansões -->
+      <div class="tab-content" id="m0t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Expansão de Chaves</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> {a,b,c}           <span class="cm"># → a b c</span>
+<span class="fn">echo</span> {1..5}            <span class="cm"># → 1 2 3 4 5</span>
+<span class="fn">echo</span> {01..10}          <span class="cm"># → 01 02 03 04 05 06 07 08 09 10</span>
+<span class="fn">echo</span> {1..10..2}        <span class="cm"># → 1 3 5 7 9 (passo 2)</span>
+
+<span class="cm"># Uso prático</span>
+<span class="fn">mkdir</span> -p projeto/{src,tests,docs,bin}
+<span class="fn">cp</span> arquivo.conf{,.bak}  <span class="cm"># backup rápido</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Substituição de Comandos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>DATA=<span class="op">$(</span><span class="fn">date</span> +%Y-%m-%d<span class="op">)</span>
+USUARIO=<span class="op">$(</span><span class="fn">whoami</span><span class="op">)</span>
+LINHAS=<span class="op">$(</span><span class="fn">wc</span> -l < /etc/passwd<span class="op">)</span>
+
+<span class="fn">echo</span> <span class="str">"Você tem $(ls | wc -l) arquivos aqui"</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Expansão Aritmética</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> $(( 2 + 3 ))       <span class="cm"># → 5</span>
+<span class="fn">echo</span> $(( 2 ** 8 ))      <span class="cm"># → 256</span>
+<span class="fn">echo</span> $(( 17 % 5 ))      <span class="cm"># → 2</span>
+A=10; B=3
+<span class="fn">echo</span> $(( A * B ))       <span class="cm"># → 30 (sem $ dentro de (( )))</span>
+(( A++ ))               <span class="cm"># incremento</span></pre>
+        </div>
+      </div>
+
+      <!-- Tab: Citações -->
+      <div class="tab-content" id="m0t4">
+        <table>
+          <tr><th>Mecanismo</th><th>Expande $VAR?</th><th>Expande $(cmd)?</th><th>Interpreta \?</th></tr>
+          <tr><td><code>"duplas"</code></td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Sim</td></tr>
+          <tr><td><code>'simples'</code></td><td>❌ Não</td><td>❌ Não</td><td>❌ Não</td></tr>
+          <tr><td><code>\barra</code></td><td>—</td><td>—</td><td>protege 1 char</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>NOME=<span class="str">"João"</span>
+
+<span class="fn">echo</span> <span class="str">"Olá, $NOME!"</span>       <span class="cm"># → Olá, João!</span>
+<span class="fn">echo</span> <span class="str">'Olá, $NOME!'</span>       <span class="cm"># → Olá, $NOME! (literal)</span>
+<span class="fn">echo</span> <span class="str">"Preço: \$10,00"</span>    <span class="cm"># → Preço: $10,00</span>
+
+<span class="cm"># Armadilha clássica com espaços</span>
+ARQUIVO=<span class="str">"meu arquivo.txt"</span>
+<span class="fn">cat</span> <span class="str">"$ARQUIVO"</span>           <span class="cm"># ✅ 1 argumento</span>
+<span class="fn">cat</span> <span class="var">$ARQUIVO</span>             <span class="cm"># ❌ 2 argumentos!</span>
+
+<span class="cm"># $'...' interpreta escapes</span>
+<span class="fn">echo</span> $<span class="str">'Linha1\nLinha2\tTab'</span></pre>
+        </div>
+      </div>
+
+      <!-- Tab: Coringas -->
+      <div class="tab-content" id="m0t5">
+        <div class="info-box"><strong>Coringas (Wildcards / Glob)</strong> são metacaracteres expandidos pelo Shell <em>antes</em> de passar os argumentos ao comando. Não são regex!</div>
+        <table>
+          <tr><th>Coringa</th><th>Significado</th><th>Exemplo</th></tr>
+          <tr><td><code>*</code></td><td>Qualquer sequência de caracteres (inclusive vazia)</td><td><code>*.txt</code> → todos os .txt</td></tr>
+          <tr><td><code>?</code></td><td>Exatamente um caractere qualquer</td><td><code>arq?.txt</code> → arq1.txt, arqA.txt</td></tr>
+          <tr><td><code>[abc]</code></td><td>Um caractere do conjunto</td><td><code>[aeiou]*</code> → começa com vogal</td></tr>
+          <tr><td><code>[a-z]</code></td><td>Um caractere no intervalo</td><td><code>[0-9]*</code> → começa com dígito</td></tr>
+          <tr><td><code>[!abc]</code></td><td>Um caractere fora do conjunto</td><td><code>[!0-9]*</code> → não começa com dígito</td></tr>
+          <tr><td><code>**</code></td><td>Recursivo (com <code>globstar</code> ativo)</td><td><code>**/*.sh</code> → todos .sh em subpastas</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Exemplos práticos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">ls</span> *.log                  <span class="cm"># todos os arquivos .log</span>
+<span class="fn">ls</span> relatorio_????.txt     <span class="cm"># relatorio_ + 4 chars + .txt</span>
+<span class="fn">ls</span> [A-Z]*.sh              <span class="cm"># scripts que começam com maiúscula</span>
+<span class="fn">rm</span> tmp[0-9][0-9]          <span class="cm"># remove tmp00 até tmp99</span>
+<span class="fn">mv</span> [!.]* /backup/         <span class="cm"># move tudo exceto arquivos ocultos</span>
+
+<span class="cm"># Ativar globstar para recursão</span>
+<span class="kw">shopt</span> -s globstar
+<span class="fn">ls</span> **/*.py                 <span class="cm"># todos .py em qualquer subpasta</span>
+
+<span class="cm"># Cuidado: se nenhum arquivo casar, o glob é passado literal</span>
+<span class="fn">ls</span> *.xyz                  <span class="cm"># se não existir → erro "No such file"</span>
+<span class="cm"># Para evitar: shopt -s nullglob</span>
+<span class="kw">shopt</span> -s nullglob
+<span class="fn">ls</span> *.xyz                  <span class="cm"># retorna vazio sem erro</span></pre>
+        </div>
+        <div class="info-box">
+          <strong>Glob ≠ Regex:</strong> <code>*</code> no glob significa "qualquer coisa", mas em regex significa "zero ou mais do anterior". Não confunda ao usar com <code>grep</code>, <code>sed</code> ou <code>awk</code>.
+        </div>
+      </div>
+
+      <!-- Tab: Brace Expansion -->
+      <div class="tab-content" id="m0t6">
+        <div class="info-box"><strong>Expansão de Chaves</strong> ocorre <em>antes</em> de qualquer outra expansão. Não precisa que os arquivos existam — gera combinações de strings.</div>
+        <table>
+          <tr><th>Sintaxe</th><th>Resultado</th></tr>
+          <tr><td><code>{a,b,c}</code></td><td>lista separada por vírgula</td></tr>
+          <tr><td><code>{1..5}</code></td><td>sequência numérica</td></tr>
+          <tr><td><code>{a..e}</code></td><td>sequência alfabética</td></tr>
+          <tr><td><code>{01..10}</code></td><td>sequência com zero à esquerda</td></tr>
+          <tr><td><code>{1..10..2}</code></td><td>sequência com passo</td></tr>
+          <tr><td><code>pre{A,B}suf</code></td><td>prefixo e sufixo fixos</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Sintaxe e exemplos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> {a,b,c}             <span class="cm"># → a b c</span>
+<span class="fn">echo</span> {1..5}              <span class="cm"># → 1 2 3 4 5</span>
+<span class="fn">echo</span> {a..e}              <span class="cm"># → a b c d e</span>
+<span class="fn">echo</span> {01..05}            <span class="cm"># → 01 02 03 04 05</span>
+<span class="fn">echo</span> {0..20..5}          <span class="cm"># → 0 5 10 15 20 (passo 5)</span>
+<span class="fn">echo</span> {z..a..3}           <span class="cm"># → z w t q n k h e b (passo 3 reverso)</span>
+
+<span class="cm"># Com prefixo/sufixo</span>
+<span class="fn">echo</span> arquivo{1,2,3}.txt  <span class="cm"># → arquivo1.txt arquivo2.txt arquivo3.txt</span>
+<span class="fn">echo</span> {jan,fev,mar}_2024  <span class="cm"># → jan_2024 fev_2024 mar_2024</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Uso prático com arquivos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># Criar estrutura de diretórios de uma vez</span>
+<span class="fn">mkdir</span> -p projeto/{src,tests,docs,bin,config}
+
+<span class="cm"># Backup rápido (sufixo vazio + .bak)</span>
+<span class="fn">cp</span> nginx.conf{,.bak}     <span class="cm"># copia nginx.conf → nginx.conf.bak</span>
+
+<span class="cm"># Criar múltiplos arquivos</span>
+<span class="fn">touch</span> log_{jan,fev,mar,abr}.txt
+
+<span class="cm"># Renomear extensão (com mv)</span>
+<span class="fn">mv</span> script.{sh,bash}      <span class="cm"># renomeia script.sh → script.bash</span>
+
+<span class="cm"># Criar arquivos numerados</span>
+<span class="fn">touch</span> relatorio_{01..12}.txt   <span class="cm"># 12 arquivos</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Produto Cartesiano (exercício)</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># Combinação de múltiplas chaves = produto cartesiano</span>
+<span class="fn">echo</span> {A,B}{1,2,3}
+<span class="cm"># → A1 A2 A3 B1 B2 B3</span>
+
+<span class="fn">echo</span> {x,y,z}{+,-}
+<span class="cm"># → x+ x- y+ y- z+ z-</span>
+
+<span class="cm"># Criar combinações de arquivos de teste</span>
+<span class="fn">touch</span> test_{unit,integ}_{pass,fail}.log
+<span class="cm"># → test_unit_pass.log test_unit_fail.log</span>
+<span class="cm">#    test_integ_pass.log test_integ_fail.log</span>
+
+<span class="cm"># Aninhamento</span>
+<span class="fn">echo</span> {a,b{1,2},c}
+<span class="cm"># → a b1 b2 c</span></pre>
+        </div>
+        <div class="info-box">
+          <strong>💡 Performance:</strong> Brace expansion é feita pelo próprio Shell, sem fork de processo. É muito mais rápido que usar um loop <code>for</code> para gerar sequências longas.
+        </div>
+      </div>
+
+      <!-- Tab: Comando time -->
+      <div class="tab-content" id="m0t7">
+        <div class="info-box"><strong>time</strong> mede o tempo de execução de um comando. Útil para comparar performance de scripts e identificar gargalos.</div>
+        <table>
+          <tr><th>Campo</th><th>Significado</th></tr>
+          <tr><td><code>real</code></td><td>Tempo total decorrido (relógio de parede) — o que você sente esperando</td></tr>
+          <tr><td><code>user</code></td><td>Tempo de CPU gasto no espaço do usuário (seu processo)</td></tr>
+          <tr><td><code>sys</code></td><td>Tempo de CPU gasto no kernel (chamadas de sistema, I/O)</td></tr>
+        </table>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Uso básico</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">time</span> <span class="fn">ls</span> -lR /usr
+<span class="cm"># real    0m1.234s</span>
+<span class="cm"># user    0m0.456s</span>
+<span class="cm"># sys     0m0.778s</span>
+
+<span class="fn">time</span> <span class="fn">sleep</span> 2
+<span class="cm"># real    0m2.001s   ← quase tudo em "real" (processo dormindo)</span>
+<span class="cm"># user    0m0.000s</span>
+<span class="cm"># sys     0m0.001s</span>
+
+<span class="cm"># Medir um script inteiro</span>
+<span class="fn">time</span> bash meu_script.sh
+
+<span class="cm"># Medir pipeline</span>
+<span class="fn">time</span> { <span class="fn">find</span> / -name "*.log" | <span class="fn">wc</span> -l; }</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — time builtin vs \time externo</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># time sem barra → builtin do bash (saída simples)</span>
+<span class="fn">time</span> <span class="fn">grep</span> -r "erro" /var/log
+
+<span class="cm"># \time → comando externo /usr/bin/time (mais detalhes)</span>
+\<span class="fn">time</span> -v <span class="fn">grep</span> -r "erro" /var/log
+<span class="cm"># Mostra: max RSS, page faults, context switches, etc.</span>
+
+<span class="cm"># Redirecionar saída do time para arquivo</span>
+{ <span class="fn">time</span> meu_script.sh; } 2> tempo.txt
+
+<span class="cm"># Comparar dois métodos</span>
+<span class="fn">echo</span> <span class="str">"=== Método 1 ==="</span>
+<span class="fn">time</span> { <span class="fn">sort</span> big.txt | <span class="fn">uniq</span> -c; }
+
+<span class="fn">echo</span> <span class="str">"=== Método 2 ==="</span>
+<span class="fn">time</span> { <span class="fn">awk</span> '{count[$0]++} END{for(k in count) print count[k], k}' big.txt; }</pre>
+        </div>
+        <div class="info-box">
+          <strong>Interpretando os resultados:</strong><br>
+          • <code>real >> user+sys</code> → processo ficou esperando I/O ou sleep<br>
+          • <code>user >> sys</code> → processamento intenso de CPU (cálculos, loops)<br>
+          • <code>sys >> user</code> → muitas chamadas ao kernel (leitura de arquivos, rede)
+        </div>
+      </div>
+
+      <!-- Tab: bc, tee e tar -->
+      <div class="tab-content" id="m0t8">
+        <div class="topic-card">
+          <div class="topic-header" onclick="toggleTopic(this)"><div class="topic-title"><span>🔢</span> bc — Calculadora de Precisão</div><span class="topic-arrow">▶</span></div>
+          <div class="topic-body">
+            <p><code>bc</code> (Basic Calculator) suporta ponto flutuante, funções matemáticas e scripts. O Shell nativo só faz aritmética inteira.</p>
+            <div class="code-block">
+              <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — bc</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+              <pre><span class="cm"># Ponto flutuante com scale</span>
+<span class="fn">echo</span> <span class="str">"scale=2; 10/3"</span> | <span class="fn">bc</span>         <span class="cm"># → 3.33</span>
+<span class="fn">echo</span> <span class="str">"scale=4; 22/7"</span> | <span class="fn">bc</span>         <span class="cm"># → 3.1428 (aprox. pi)</span>
+
+<span class="cm"># Funções matemáticas (requer -l)</span>
+<span class="fn">echo</span> <span class="str">"sqrt(144)"</span> | <span class="fn">bc</span> -l          <span class="cm"># → 12.00000000000000000000</span>
+<span class="fn">echo</span> <span class="str">"s(3.14159)"</span> | <span class="fn">bc</span> -l         <span class="cm"># seno (radianos)</span>
+<span class="fn">echo</span> <span class="str">"l(10)"</span> | <span class="fn">bc</span> -l              <span class="cm"># logaritmo natural</span>
+
+<span class="cm"># Potência e módulo</span>
+<span class="fn">echo</span> <span class="str">"2^10"</span> | <span class="fn">bc</span>                  <span class="cm"># → 1024</span>
+<span class="fn">echo</span> <span class="str">"17 % 5"</span> | <span class="fn">bc</span>               <span class="cm"># → 2</span>
+
+<span class="cm"># Here String (mais limpo)</span>
+<span class="fn">bc</span> -l <<< <span class="str">"scale=6; 4*a(1)"</span>      <span class="cm"># → 3.141592 (pi via arctan)</span>
+
+<span class="cm"># Capturar resultado em variável</span>
+RESULTADO=$(<span class="fn">echo</span> <span class="str">"scale=2; 100/3"</span> | <span class="fn">bc</span>)
+<span class="fn">echo</span> <span class="str">"Resultado: $RESULTADO"</span></pre>
+            </div>
+          </div>
+        </div>
+        <div class="topic-card">
+          <div class="topic-header" onclick="toggleTopic(this)"><div class="topic-title"><span>🔀</span> tee — Duplicar Saída</div><span class="topic-arrow">▶</span></div>
+          <div class="topic-body">
+            <p><code>tee</code> lê da stdin e escreve simultaneamente na stdout <em>e</em> em um arquivo. Ideal para logar e ver ao mesmo tempo.</p>
+            <div class="code-block">
+              <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — tee</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+              <pre><span class="cm"># Salvar saída E ver no terminal</span>
+<span class="fn">ls</span> -la | <span class="fn">tee</span> listagem.txt
+
+<span class="cm"># Append (não sobrescreve)</span>
+<span class="fn">echo</span> <span class="str">"nova linha"</span> | <span class="fn">tee</span> -a log.txt
+
+<span class="cm"># Gravar em múltiplos arquivos</span>
+<span class="fn">echo</span> <span class="str">"dados"</span> | <span class="fn">tee</span> arq1.txt arq2.txt arq3.txt
+
+<span class="cm"># Usar no meio de um pipeline</span>
+<span class="fn">cat</span> dados.csv | <span class="fn">tee</span> backup.csv | <span class="fn">grep</span> <span class="str">"erro"</span> | <span class="fn">wc</span> -l
+
+<span class="cm"># Salvar resultado de bc e mostrar</span>
+<span class="fn">echo</span> <span class="str">"scale=2; 355/113"</span> | <span class="fn">bc</span> | <span class="fn">tee</span> resultado.txt
+<span class="cm"># → mostra 3.14 no terminal E salva em resultado.txt</span>
+
+<span class="cm"># Com sudo (escrever em arquivo protegido)</span>
+<span class="fn">echo</span> <span class="str">"nova config"</span> | <span class="fn">sudo</span> <span class="fn">tee</span> /etc/config.conf</pre>
+            </div>
+          </div>
+        </div>
+        <div class="topic-card">
+          <div class="topic-header" onclick="toggleTopic(this)"><div class="topic-title"><span>📦</span> tar — Arquivamento e Extração</div><span class="topic-arrow">▶</span></div>
+          <div class="topic-body">
+            <p><code>tar</code> (Tape ARchive) agrupa arquivos em um único arquivo. Combinado com <code>gzip</code>, <code>bzip2</code> ou <code>xz</code> para compressão.</p>
+            <div class="code-block">
+              <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — tar: criar e extrair</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+              <pre><span class="cm"># ── CRIAR ──────────────────────────────────────</span>
+<span class="fn">tar</span> -czf backup.tar.gz  pasta/    <span class="cm"># gzip  (.tar.gz)</span>
+<span class="fn">tar</span> -cjf backup.tar.bz2 pasta/    <span class="cm"># bzip2 (.tar.bz2)</span>
+<span class="fn">tar</span> -cJf backup.tar.xz  pasta/    <span class="cm"># xz    (.tar.xz, melhor compressão)</span>
+<span class="fn">tar</span> -cf  backup.tar     pasta/    <span class="cm"># sem compressão</span>
+
+<span class="cm"># ── EXTRAIR ────────────────────────────────────</span>
+<span class="fn">tar</span> -xzf backup.tar.gz            <span class="cm"># extrai no diretório atual</span>
+<span class="fn">tar</span> -xzf backup.tar.gz -C /tmp/   <span class="cm"># extrai em /tmp/</span>
+<span class="fn">tar</span> -xf  backup.tar.xz            <span class="cm"># auto-detecta compressão</span>
+
+<span class="cm"># ── LISTAR ─────────────────────────────────────</span>
+<span class="fn">tar</span> -tzf backup.tar.gz            <span class="cm"># lista conteúdo sem extrair</span>
+<span class="fn">tar</span> -tvf backup.tar.gz            <span class="cm"># lista com detalhes (verbose)</span>
+
+<span class="cm"># ── EXTRAIR ARQUIVO ESPECÍFICO ─────────────────</span>
+<span class="fn">tar</span> -xzf backup.tar.gz pasta/config.txt
+
+<span class="cm"># ── EXCLUIR PADRÃO AO CRIAR ────────────────────</span>
+<span class="fn">tar</span> -czf backup.tar.gz pasta/ --exclude="*.log" --exclude=".git"</pre>
+            </div>
+            <div class="info-box">
+              <strong>Macete para lembrar as flags:</strong><br>
+              <code>c</code> = Create | <code>x</code> = eXtract | <code>t</code> = lisT<br>
+              <code>z</code> = gZip | <code>j</code> = bzip2 | <code>J</code> = xz<br>
+              <code>f</code> = File (sempre o último, seguido do nome)<br>
+              <code>v</code> = Verbose | <code>C</code> = diretório de destino
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MÓDULO 2 ═══════════════ -->
+    <div class="module-page" id="mod-1" style="--mod-color:#0891b2">
+      <div class="module-header">
+        <div class="module-icon">✂️</div>
+        <div><h2>Módulo 2 — Manipulação de Texto (sed e grep)</h2><p>Edição não-interativa de fluxos de texto e filtragem avançada</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m1t0')">sed Básico</div>
+        <div class="tab" onclick="switchTab(this,'m1t1')">Substituição</div>
+        <div class="tab" onclick="switchTab(this,'m1t2')">Pattern/Hold Space</div>
+        <div class="tab" onclick="switchTab(this,'m1t3')">grep</div>
+      </div>
+      <div class="tab-content active" id="m1t0">
+        <div class="info-box"><strong>sed</strong> (Stream Editor) processa texto linha a linha, aplicando comandos sem abrir um editor interativo.</div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Comandos Básicos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">sed</span> -n <span class="str">'2,4p'</span> arquivo.txt       <span class="cm"># imprime linhas 2 a 4</span>
+<span class="fn">sed</span> <span class="str">'3d'</span> arquivo.txt              <span class="cm"># deleta linha 3</span>
+<span class="fn">sed</span> <span class="str">'2i\Linha inserida'</span> arq.txt   <span class="cm"># insere ANTES da linha 2</span>
+<span class="fn">sed</span> <span class="str">'2a\Linha após'</span> arq.txt       <span class="cm"># insere APÓS a linha 2</span>
+<span class="fn">sed</span> <span class="str">'2c\Linha nova'</span> arq.txt       <span class="cm"># troca a linha 2</span>
+<span class="fn">sed</span> -n <span class="str">'/erro/p'</span> log.txt          <span class="cm"># imprime linhas com "erro"</span>
+<span class="fn">sed</span> <span class="str">'/^$/d'</span> arquivo.txt           <span class="cm"># remove linhas em branco</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m1t1">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Substituição e Retrovisores</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">sed</span> <span class="str">'s/foo/bar/g'</span> arquivo.txt    <span class="cm"># substitui todas as ocorrências</span>
+<span class="fn">sed</span> <span class="str">'s/foo/bar/2'</span> arquivo.txt    <span class="cm"># substitui só a 2ª ocorrência</span>
+<span class="fn">sed</span> <span class="str">'s/foo/bar/gi'</span> arquivo.txt   <span class="cm"># case-insensitive</span>
+
+<span class="cm"># Delimitador alternativo (útil com caminhos)</span>
+<span class="fn">sed</span> <span class="str">'s|/usr/local|/opt|g'</span> arq.txt
+
+<span class="cm"># Retrovisores: captura com \(...\) e referencia com \1</span>
+<span class="fn">echo</span> <span class="str">"João Silva"</span> | <span class="fn">sed</span> <span class="str">'s/\(.*\) \(.*\)/\2, \1/'</span>
+<span class="cm"># → Silva, João</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m1t2">
+        <div class="info-box"><strong>Pattern Space:</strong> buffer de trabalho — contém a linha atual.<br><strong>Hold Space:</strong> buffer auxiliar — armazena dados entre linhas.</div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="cm"># Inverter ordem das linhas (tac manual)</span>
+<span class="fn">sed</span> -n <span class="str">'1!G; h; $p'</span> arquivo.txt
+
+<span class="cm"># Juntar todas as linhas em uma</span>
+<span class="fn">sed</span> <span class="str">':loop; N; $!b loop; s/\n/ /g'</span> arquivo.txt
+
+<span class="cm"># Duplicar cada linha</span>
+<span class="fn">sed</span> <span class="str">'p'</span> arquivo.txt</pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m1t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — grep</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">grep</span> -c <span class="str">"erro"</span> log.txt           <span class="cm"># conta ocorrências</span>
+<span class="fn">grep</span> -v <span class="str">"DEBUG"</span> log.txt          <span class="cm"># inverte: linhas SEM "DEBUG"</span>
+<span class="fn">grep</span> -E <span class="str">"erro|falha"</span> log.txt     <span class="cm"># regex estendida (ERE)</span>
+<span class="fn">grep</span> -rn <span class="str">"TODO"</span> ./src/           <span class="cm"># recursivo com nº de linha</span>
+<span class="fn">grep</span> -i <span class="str">"erro"</span> log.txt           <span class="cm"># case-insensitive</span>
+<span class="fn">grep</span> -A2 -B2 <span class="str">"erro"</span> log.txt      <span class="cm"># 2 linhas antes e depois</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MÓDULO 3 ═══════════════ -->
+    <div class="module-page" id="mod-2" style="--mod-color:#059669">
+      <div class="module-header">
+        <div class="module-icon">🔢</div>
+        <div><h2>Módulo 3 — Corte, Colagem e Aritmética</h2><p>Processamento de arquivos estruturados e cálculos no Shell</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m2t0')">cut e paste</div>
+        <div class="tab" onclick="switchTab(this,'m2t1')">tr e uniq</div>
+        <div class="tab" onclick="switchTab(this,'m2t2')">Aritmética</div>
+        <div class="tab" onclick="switchTab(this,'m2t3')">Strings</div>
+      </div>
+      <div class="tab-content active" id="m2t0">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — cut</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">cut</span> -d: -f1,3 /etc/passwd      <span class="cm"># campos 1 e 3 separados por ":"</span>
+<span class="fn">cut</span> -d: -f1-3 /etc/passwd      <span class="cm"># campos 1 até 3</span>
+<span class="fn">cut</span> -c1-10 arquivo.txt         <span class="cm"># caracteres 1 a 10 de cada linha</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — paste</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">paste</span> arq1.txt arq2.txt        <span class="cm"># une lado a lado com tab</span>
+<span class="fn">paste</span> -d, arq1.txt arq2.txt    <span class="cm"># usa vírgula como separador</span>
+<span class="fn">paste</span> -s arq.txt               <span class="cm"># serializa (linhas → uma linha)</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m2t1">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — tr</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> <span class="str">"hello"</span> | <span class="fn">tr</span> <span class="str">'a-z'</span> <span class="str">'A-Z'</span>    <span class="cm"># → HELLO</span>
+<span class="fn">echo</span> <span class="str">"aabbcc"</span> | <span class="fn">tr</span> -s <span class="str">'a-z'</span>      <span class="cm"># compacta repetidos → abc</span>
+<span class="fn">echo</span> <span class="str">"hello"</span> | <span class="fn">tr</span> -d <span class="str">'aeiou'</span>    <span class="cm"># deleta vogais → hll</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — uniq</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">sort</span> arq.txt | <span class="fn">uniq</span>            <span class="cm"># remove duplicatas</span>
+<span class="fn">sort</span> arq.txt | <span class="fn">uniq</span> -c         <span class="cm"># conta ocorrências</span>
+<span class="fn">sort</span> arq.txt | <span class="fn">uniq</span> -d         <span class="cm"># mostra só os duplicados</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m2t2">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Aritmética</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> $(( 10 * 2 + 5 ))         <span class="cm"># → 25</span>
+resultado=$(( 100 / 4 ))
+
+<span class="fn">echo</span> <span class="str">"scale=2; 10/3"</span> | <span class="fn">bc</span>       <span class="cm"># → 3.33</span>
+<span class="fn">echo</span> <span class="str">"sqrt(144)"</span> | <span class="fn">bc</span> -l        <span class="cm"># → 12.00</span>
+<span class="fn">expr</span> 10 \* 2                   <span class="cm"># * precisa de escape</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m2t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Manipulação de Strings</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>STR=<span class="str">"Hello, World"</span>
+<span class="fn">echo</span> ${#STR}                   <span class="cm"># tamanho → 13</span>
+<span class="fn">echo</span> ${STR:7:5}                <span class="cm"># 5 chars a partir de 7 → World</span>
+<span class="fn">echo</span> ${STR/World/Shell}        <span class="cm"># substitui → Hello, Shell</span>
+
+ARQ=<span class="str">"foto.jpg.bak"</span>
+<span class="fn">echo</span> ${ARQ%.bak}               <span class="cm"># remove sufixo → foto.jpg</span>
+<span class="fn">echo</span> ${ARQ##*.}                <span class="cm"># remove até último . → bak</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MÓDULO 4 ═══════════════ -->
+    <div class="module-page" id="mod-3" style="--mod-color:#d97706">
+      <div class="module-header">
+        <div class="module-icon">🔀</div>
+        <div><h2>Módulo 4 — Lógica e Estruturas de Controle</h2><p>Condicionais, laços e controle de fluxo em scripts Shell</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m3t0')">if e test</div>
+        <div class="tab" onclick="switchTab(this,'m3t1')">case</div>
+        <div class="tab" onclick="switchTab(this,'m3t2')">Laços</div>
+        <div class="tab" onclick="switchTab(this,'m3t3')">break/continue</div>
+      </div>
+      <div class="tab-content active" id="m3t0">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — if / test / [[</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="kw">if</span> [ -f <span class="str">"/etc/passwd"</span> ]; <span class="kw">then</span>
+    <span class="fn">echo</span> <span class="str">"Arquivo existe"</span>
+<span class="kw">fi</span>
+
+<span class="kw">if</span> [[ <span class="var">$NOME</span> == <span class="str">"root"</span> ]]; <span class="kw">then</span>
+    <span class="fn">echo</span> <span class="str">"É root"</span>
+<span class="kw">elif</span> [[ -z <span class="var">$NOME</span> ]]; <span class="kw">then</span>
+    <span class="fn">echo</span> <span class="str">"Nome vazio"</span>
+<span class="kw">else</span>
+    <span class="fn">echo</span> <span class="str">"Usuário comum"</span>
+<span class="kw">fi</span></pre>
+        </div>
+        <table>
+          <tr><th>Teste</th><th>Significado</th></tr>
+          <tr><td><code>-f arq</code></td><td>é arquivo regular?</td></tr>
+          <tr><td><code>-d dir</code></td><td>é diretório?</td></tr>
+          <tr><td><code>-z "$var"</code></td><td>string vazia?</td></tr>
+          <tr><td><code>$a -gt $b</code></td><td>a maior que b?</td></tr>
+          <tr><td><code>$a -eq $b</code></td><td>a igual a b?</td></tr>
+        </table>
+      </div>
+      <div class="tab-content" id="m3t1">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — case</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="kw">case</span> <span class="var">$opcao</span> <span class="kw">in</span>
+    start)  <span class="fn">echo</span> <span class="str">"Iniciando..."</span> ;;
+    stop)   <span class="fn">echo</span> <span class="str">"Parando..."</span> ;;
+    [rR]estart) <span class="fn">echo</span> <span class="str">"Reiniciando..."</span> ;;
+    *) <span class="fn">echo</span> <span class="str">"Opção inválida"</span> ;;
+<span class="kw">esac</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m3t2">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Laços</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="kw">for</span> i <span class="kw">in</span> {1..5}; <span class="kw">do</span> <span class="fn">echo</span> <span class="var">$i</span>; <span class="kw">done</span>
+<span class="kw">for</span> (( i=0; i<5; i++ )); <span class="kw">do</span> <span class="fn">echo</span> <span class="var">$i</span>; <span class="kw">done</span>
+
+contador=0
+<span class="kw">while</span> [ <span class="var">$contador</span> -lt 5 ]; <span class="kw">do</span>
+    <span class="fn">echo</span> <span class="var">$contador</span>; (( contador++ ))
+<span class="kw">done</span>
+
+<span class="kw">until</span> [ <span class="var">$contador</span> -ge 5 ]; <span class="kw">do</span>
+    (( contador++ ))
+<span class="kw">done</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m3t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — break e continue</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="kw">for</span> i <span class="kw">in</span> {1..10}; <span class="kw">do</span>
+    [ <span class="var">$i</span> -eq 5 ] && <span class="kw">continue</span>   <span class="cm"># pula o 5</span>
+    [ <span class="var">$i</span> -eq 8 ] && <span class="kw">break</span>      <span class="cm"># para no 8</span>
+    <span class="fn">echo</span> <span class="var">$i</span>
+<span class="kw">done</span>  <span class="cm"># → 1 2 3 4 6 7</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MÓDULO 5 ═══════════════ -->
+    <div class="module-page" id="mod-4" style="--mod-color:#7c3aed">
+      <div class="module-header">
+        <div class="module-icon">📥</div>
+        <div><h2>Módulo 5 — E/S e Variáveis Avançadas</h2><p>Interação com o usuário, arrays e expansão avançada de parâmetros</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m4t0')">read</div>
+        <div class="tab" onclick="switchTab(this,'m4t1')">Variáveis Especiais</div>
+        <div class="tab" onclick="switchTab(this,'m4t2')">Expansão de Parâmetros</div>
+        <div class="tab" onclick="switchTab(this,'m4t3')">Arrays</div>
+      </div>
+      <div class="tab-content active" id="m4t0">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — read</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">read</span> -p <span class="str">"Nome: "</span> nome
+<span class="fn">read</span> -s -p <span class="str">"Senha: "</span> senha; <span class="fn">echo</span>
+<span class="fn">read</span> -t 10 -p <span class="str">"Responda em 10s: "</span> r
+<span class="fn">read</span> -a array <<< <span class="str">"um dois três"</span>
+<span class="fn">read</span> -n 1 tecla
+
+<span class="kw">while</span> IFS= <span class="fn">read</span> -r linha; <span class="kw">do</span>
+    <span class="fn">echo</span> <span class="str">"→ $linha"</span>
+<span class="kw">done</span> < arquivo.txt</pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m4t1">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Variáveis Especiais</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> <span class="var">$$</span>    <span class="cm"># PID do shell atual</span>
+<span class="fn">echo</span> <span class="var">$?</span>    <span class="cm"># código de saída do último comando</span>
+<span class="fn">echo</span> <span class="var">$0</span>    <span class="cm"># nome do script</span>
+<span class="fn">echo</span> <span class="var">$#</span>    <span class="cm"># número de argumentos</span>
+<span class="fn">echo</span> <span class="var">$@</span>    <span class="cm"># todos os argumentos (separados)</span>
+<span class="fn">echo</span> <span class="var">$RANDOM</span>  <span class="cm"># número aleatório 0-32767</span>
+
+<span class="fn">ls</span> /tmp | <span class="fn">grep</span> <span class="str">"x"</span> | <span class="fn">wc</span> -l
+<span class="fn">echo</span> ${PIPESTATUS[@]}  <span class="cm"># ex: 0 1 0</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m4t2">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Expansão de Parâmetros</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">echo</span> ${VAR:-<span class="str">"padrão"</span>}   <span class="cm"># usa padrão se VAR não definida</span>
+<span class="fn">echo</span> ${VAR:=<span class="str">"padrão"</span>}   <span class="cm"># atribui padrão se VAR não definida</span>
+<span class="fn">echo</span> ${VAR:?<span class="str">"Erro!"</span>}    <span class="cm"># erro se VAR não definida</span>
+
+STR=<span class="str">"hello world"</span>
+<span class="fn">echo</span> ${STR^^}          <span class="cm"># → HELLO WORLD</span>
+<span class="fn">echo</span> ${STR^}           <span class="cm"># → Hello world</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m4t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Arrays</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>frutas=(<span class="str">"maçã"</span> <span class="str">"banana"</span> <span class="str">"laranja"</span>)
+<span class="fn">echo</span> ${frutas[0]}      <span class="cm"># → maçã</span>
+<span class="fn">echo</span> ${frutas[@]}      <span class="cm"># todos os elementos</span>
+<span class="fn">echo</span> ${#frutas[@]}     <span class="cm"># quantidade → 3</span>
+
+<span class="kw">declare</span> -A cores
+cores[vermelho]=<span class="str">"#FF0000"</span>
+<span class="fn">echo</span> ${cores[vermelho]}
+
+<span class="fn">mapfile</span> -t linhas < arquivo.txt
+<span class="fn">echo</span> ${linhas[2]}      <span class="cm"># linha 3 do arquivo</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ MÓDULO 6 ═══════════════ -->
+    <div class="module-page" id="mod-5" style="--mod-color:#dc2626">
+      <div class="module-header">
+        <div class="module-icon">🤖</div>
+        <div><h2>Módulo 6 — Automação e Depuração Profissional</h2><p>Funções, sinais, getopts, processos paralelos e debug de scripts</p></div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'m5t0')">Funções</div>
+        <div class="tab" onclick="switchTab(this,'m5t1')">trap</div>
+        <div class="tab" onclick="switchTab(this,'m5t2')">getopts</div>
+        <div class="tab" onclick="switchTab(this,'m5t3')">FIFO e Processos</div>
+        <div class="tab" onclick="switchTab(this,'m5t4')">Depuração</div>
+      </div>
+      <div class="tab-content active" id="m5t0">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Funções</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>saudacao() {
+    <span class="kw">local</span> nome=<span class="var">$1</span>
+    <span class="fn">echo</span> <span class="str">"Olá, $nome!"</span>
+    <span class="kw">return</span> 0
+}
+saudacao <span class="str">"Maria"</span>
+
+soma() { <span class="fn">echo</span> $(( <span class="var">$1</span> + <span class="var">$2</span> )); }
+resultado=$(soma 5 3)   <span class="cm"># → 8</span>
+
+on_error() { <span class="fn">echo</span> <span class="str">"Erro na linha $1"</span>; <span class="fn">exit</span> 1; }
+<span class="fn">trap</span> <span class="str">'on_error $LINENO'</span> ERR</pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m5t1">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — trap</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre>TMP=<span class="op">$(</span><span class="fn">mktemp</span><span class="op">)</span>
+<span class="fn">trap</span> <span class="str">"rm -f $TMP; echo 'Limpeza feita'"</span> EXIT
+<span class="fn">trap</span> <span class="str">''</span> INT          <span class="cm"># ignorar Ctrl+C</span>
+<span class="fn">trap</span> - INT           <span class="cm"># restaurar padrão</span>
+<span class="fn">trap</span> <span class="str">"echo 'Sinal!'"</span> HUP INT TERM</pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m5t2">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — getopts</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="kw">while</span> <span class="fn">getopts</span> <span class="str">"a:b:hv"</span> opt; <span class="kw">do</span>
+    <span class="kw">case</span> <span class="var">$opt</span> <span class="kw">in</span>
+        a) valor_a=<span class="str">"$OPTARG"</span> ;;
+        b) valor_b=<span class="str">"$OPTARG"</span> ;;
+        h) <span class="fn">echo</span> <span class="str">"Uso: $0 [-a val] [-b val]"</span>; <span class="fn">exit</span> 0 ;;
+        v) verbose=<span class="kw">true</span> ;;
+        ?) <span class="fn">exit</span> 1 ;;
+    <span class="kw">esac</span>
+<span class="kw">done</span></pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m5t3">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — FIFO e Substituição de Processos</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">mkfifo</span> /tmp/meu_pipe
+produtor > /tmp/meu_pipe &
+consumidor < /tmp/meu_pipe
+
+<span class="fn">diff</span> <(ls dir1) <(ls dir2)
+
+<span class="kw">while</span> <span class="fn">read</span> linha; <span class="kw">do</span>
+    <span class="fn">echo</span> <span class="str">"Processando: $linha"</span>
+<span class="kw">done</span> < <(<span class="fn">grep</span> <span class="str">"erro"</span> log.txt)</pre>
+        </div>
+      </div>
+      <div class="tab-content" id="m5t4">
+        <div class="code-block">
+          <div class="code-header"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><span>bash — Depuração</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><span class="fn">bash</span> -x script.sh    <span class="cm"># trace de execução</span>
+<span class="fn">bash</span> -n script.sh    <span class="cm"># verifica sintaxe sem executar</span>
+
+<span class="kw">set</span> -x               <span class="cm"># ativa trace</span>
+<span class="kw">set</span> +x               <span class="cm"># desativa trace</span>
+<span class="kw">set</span> -e               <span class="cm"># para ao primeiro erro</span>
+<span class="kw">set</span> -u               <span class="cm"># erro em variável não definida</span>
+<span class="kw">set</span> -o pipefail      <span class="cm"># captura erro em pipes</span>
+<span class="kw">set</span> -euo pipefail    <span class="cm"># combinação recomendada</span></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function showModule(idx) {
+    document.querySelectorAll('.module-page').forEach((p,i) => p.classList.toggle('active', i === idx));
+    document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active', i === idx));
+  }
+  function switchTab(el, targetId) {
+    el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    el.closest('.module-page').querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(targetId).classList.add('active');
+  }
+  function toggleTopic(el) {
+    el.closest('.topic-card').classList.toggle('open');
+  }
+  function copyCode(btn) {
+    const text = btn.closest('.code-block').querySelector('pre').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Copiado!';
+      btn.style.background = '#059669';
+      btn.style.color = '#fff';
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.style.background = ''; btn.style.color = ''; }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
